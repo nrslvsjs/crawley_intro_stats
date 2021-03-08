@@ -1,0 +1,121 @@
+---
+title: "4_variance"
+author: "Nick Schultz"
+date: "3/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ozone <- read.csv("gardens.csv")
+
+attach(ozone)
+
+ozone
+```
+## calculate variance aka sum of squares
+```{r}
+mean(gardenA)
+
+gardenA - mean(gardenA)
+
+(gardenA - mean(gardenA))^2
+
+sum((gardenA - mean(gardenA))^2)
+
+sum((gardenA - mean(gardenA))^2) / 9
+
+sum((gardenB - mean(gardenB))^2) / 9
+
+sum((gardenC - mean(gardenC))^2) / 9
+```
+
+## F test
+are variances significantly different?
+```{r}
+var(gardenC)/var(gardenB)
+
+2 * (1 - pf(q = 10.667, df1 = 9, df2 = 9))
+
+var.test(gardenB, gardenC)
+```
+Constancy of variance is assumed when carry out standard tests, i.e. Student's t test, to compare two means, or ANOVA to compare three or more means.
+```{r}
+mean(gardenA) == mean(gardenB)
+var(gardenA) == var(gardenB)
+```
+
+
+
+When the variances are different, do not compare the means.
+```{r}
+mean(gardenB) == mean(gardenC)
+
+(var(gardenB) == var(gardenC))
+
+gardenB
+
+gardenC
+```
+
+variance as a measure of unreliabiilty, i.e. standard error of the mean
+```{r}
+sqrt(var(gardenA)/10)
+sqrt(var(gardenB)/10)
+sqrt(var(gardenC)/10)
+```
+"The mean ozone concentration was 3.0 +- 0.365 pphm (1 s.e. = 10)" 
+
+Confidence Intervals
+If sample size n < 30, i.e. too small to use normal distribution, then use Student's t distribution.
+```{r}
+qt(p = 0.025, df = 9)
+qt(p = .975, df = 9)
+
+qt(p = .995, df = 9)
+qt(.9975, 9)
+```
+The values of Student's t are number of standard errors to be expected with specified probability and for given number of degrees of freedom.
+
+Confidence interval of mean based on small sample
+```{r}
+qt(.975, 9) * sqrt(1.33333/10)
+```
+"The mean ozone concentration in garden B was 5.0 +- 0.826 (95% CI, n = 10)."
+
+Bootstrapping
+```{r}
+data <- read.csv("skewdata.csv")
+attach(data)
+names(data)
+```
+
+```{r}
+plot(c(0, 30), c(0, 60), type = "n", xlab = "Sample size", 
+     ylab = "Confidence interval")
+for (k in seq(from = 5, to = 30, by = 3)) {
+  a <- numeric(10000)
+  for (i in 1:10000) {
+    a[i] <- mean(sample(x = values, size = k, replace = TRUE))
+  }
+points(c(k,k), quantile(a, c(0.25, .975)), type = "b", pch = 21, bg = "red")
+}
+
+quantile(a, c(0.025, 0.975))
+
+xv <- seq(5, 30, 0.1)
+yv <- mean(values) + 1.96 * sqrt(var(values)/xv)
+lines(xv, yv, col = "blue")
+yv <- mean(values) - 1.96 * sqrt(var(values)/xv)
+lines(xv, yv, col = "blue")
+
+yv <- mean(values) + qt(.975, xv - 1) * sqrt(var(values)/xv)
+lines(xv, yv, lty = 2, col = "green")
+yv <- mean(values) - qt(.975, xv - 1) * sqrt(var(values)/xv)
+lines(xv, yv, lty = 2, col = "green")
+
+```
+

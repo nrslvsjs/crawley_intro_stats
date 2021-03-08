@@ -1,0 +1,230 @@
+---
+title: "6_two_samples"
+author: "Nick Schultz"
+date: "3/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Two Samples
+
+Occam's razor: simplest is best...  
+
+Classical tests:  
+* compare two variances  
+* compare two sample means with normal errors  
+* compare two means with non-normal errors  
+* compare two proportions  
+* correlate two variables  
+* testing for independence in contingency tables using chi-squared test  
+* testing small samples for correlation with Fisher's exact test
+
+Comparing two variances  
+Fisher's F Test  
+```{r}
+qf(0.975, 9, 9)
+```
+Calculated variance ratio needs to be greater than or equal to 4.026 in order for us to conclude that the two variances are significantly different at alpha = 0.5.
+```{r}
+f.test.data <- read.csv("f.test.data.csv")
+
+names(f.test.data)
+
+var(f.test.data$gardenB)
+var(f.test.data$gardenC)
+
+F.ratio <- var(f.test.data$gardenC)/var(f.test.data$gardenB)
+F.ratio
+```
+Since the test statistic is larger than the critical value, we reject the null hypothesis that the two variances are not significantly different.
+```{r}
+2 * (1 - pf(F.ratio, 9, 9))
+```
+The probabilty of obtianing an F ration as large or larger, if the variances were the same, is less than 0.0002.
+
+Because the variances are different, it would be wrong to compare the two sample means using Student's t test.
+```{r}
+var.test(f.test.data$gardenB, f.test.data$gardenC)
+```
+
+Comparing two means:  
+* Student's t test:  samples independent, variances constant, errors normally distributed  
+*Wilcoxon rank-sum test:  samples independent BUT errors not normally distributed  
+
+Student's t test:  standard error of the difference between two means  
+```{r}
+qt(0.975, 18)
+
+t.test.data <- read.csv("t.test.data.csv")
+names(t.test.data)
+
+s2A <- var(t.test.data$gardenA)
+s2B <- var(t.test.data$gardenB)
+
+s2A/s2B
+```
+Constancy of variance is most important assumption of t test.
+Value of test statistic:  numerator is difference between two means; denominator is square root of sum of variances divided by their sample sizes.
+```{r}
+(mean(t.test.data$gardenA) - mean(t.test.data$gardenB))/sqrt(s2A/10 + s2B/10)
+```
+Since test statistic is larger than critical value, reject the null hypothesis.
+```{r}
+2 * pt(-3.872983, 18)
+
+t.test(t.test.data$gardenA, t.test.data$gardenB)
+```
+"Ozone concentration was significantly higher in garden B (mean = 5.0 pphm) than in garden A (mean = 3.0 pphm; t = 3.873, p = 0.0011 (two-tailed), df = 18)."
+
+Wilcoxon Rank-Sum Test  
+nonparametric alternative to Student's t test, if errors non-normal  
+```{r}
+ozone <- read.csv("gardens.csv")
+attach(ozone)
+
+ozone <- c(ozone$gardenA, ozone$gardenB)
+ozone
+
+label <- c(rep("A", 10), rep("B", 10))
+label
+
+combined.ranks <- rank(ozone)
+combined.ranks
+
+tapply(combined.ranks, label, sum)
+
+wilcox.test(gardenA, gardenB)
+
+
+```
+
+Tests on paired samples  
+expect a correlation  
+```{r}
+
+streams <- read.delim("therbook/streams.txt")
+
+attach(streams)
+
+names(streams)
+
+```
+
+Ignore the fact samples are paired:
+```{r}
+t.test(down, up)
+```
+But samples came from same river, one upstream and one downstream:
+```{r}
+t.test(down, up, paired = TRUE)
+```
+
+If you can do a paired t test than always do a paired test.  
+
+Here is the same paired test carried out as a one-sample t test on differences in the pairs:
+```{r}
+d <- up - down
+t.test(d)
+```
+The result is identical to the two-sample t test with paired.  
+
+If there is information on blocking or spatial correlation, it always helps with the test.  
+
+The Binomial Test:  
+cannot measure a difference but can see it...  
+```{r}
+binom.test(1, 9)
+```
+Binomial Test to Compare Two Proportions  
+196 men promoted out of 3270; 4 women promoted out of 40  
+Question:  is there positive discrimination in favor of the women?
+```{r}
+prop.test(c(4, 196), c(40, 3270))
+```
+
+Chi-squared Contingency Tables  
+```{r}
+qchisq(0.95, 1)
+
+count <- matrix(c(38, 14, 11, 51), nrow = 2)
+count
+
+chisq.test(count)
+chisq.test(count, correct = FALSE)
+```
+Fisher's Exact Test  
+used for analysis of contingency tables based on small samples in which one or more of expected frequencies are less than 5.
+```{r}
+x <- as.matrix(c(6, 4, 2, 8))
+dim(x) <- c(2, 2)
+x
+
+fisher.test(x)
+```
+```{r}
+table <- read.csv("fisher.csv")
+attach(table)
+head(table)
+
+fisher.test(tree, nests)
+```
+
+Correlation and Covariance  
+```{r}
+data <- read.csv("twosample.csv")
+attach(data)
+plot(data$x, data$y, col = "blue", bg = "orange")
+
+var(data$x)
+var(data$y)
+
+var(data$x, data$y)
+
+var(data$x, data$y)/sqrt(var(data$x) * var(data$y))
+
+
+```
+Correlation and Variance of Differences between Variables  
+question the effect of correlation on variance of differences between variables...the variance of a difference will decline as the strength of positive correlation increases.  
+```{r}
+paired <- read.csv("water.table.csv")
+
+attach(paired)
+names(paired)
+
+```
+
+Is there a correlation between summer and winter water table?
+```{r}
+cor(Summer, Winter)
+```
+
+cor.test has non-parametric options for Kendall's tau or Spearman's rank  
+```{r}
+cor.test(Summer, Winter)
+```
+The correlation is highly significant.  
+
+relationship of three variances: Summer, Winter, and of Summer - Winter  
+```{r}
+varS <- var(Summer)
+varW <- var(Winter)
+varD <- var(Summer - Winter)
+```
+Correlation coefficient:  
+```{r}
+(varS + varW - varD)/(2 * sqrt(varS) * sqrt(varW))
+
+varD
+
+varS + varW
+
+varS + varW - 2 * 0.8820102 * sqrt(varS) * sqrt(varW)
+
+
+
+
+```
+

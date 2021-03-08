@@ -1,0 +1,160 @@
+---
+title: "5_single_samples"
+author: "Nick Schultz"
+date: "3/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Single Samples
+
+Questions:  1. what is mean value? 
+            2. is mean value significantly different from current expectation or theory?
+            3. what is the level of uncertainty associated with our estimate of the mean values?
+            
+First, we must establish:
+            1. are the values normally distributed?
+            2. are there outliers in the data?
+            3. if data were collected over a period of time, is there evidence for serial correlation?
+Non-normality, outliers, and serial correlation can invalidate inferences made by parametric tests, i.e. Student's t test. (Might need to use non-parametric techniques such as Wilcoxon's signed-rank test; if serial correlation, need to use time series analysis or mixed effectes model.)
+
+```{r}
+library(ggplot2)
+library(readr)
+
+data <- read.csv("example.csv")
+data2 <- read_csv("example.csv")
+
+head(data2)
+names(data)
+
+summary(data)
+summary(data2)
+boxplot(data$y)
+
+ggplot(data = data2, aes(y)) +
+  geom_boxplot()
+
+hist(data$y)
+
+ggplot(data, aes(y)) +
+  geom_histogram(bins = 12, color = "white")
+```
+
+Calculations using z of the Normal distribution
+suppose we have heights of 100 people; mean height = 170 cm; sd = 8 cm.
+```{r}
+ht <- seq(150, 190, 0.01)
+
+plot(ht, dnorm(x = ht, mean = 170, sd = 8), type = "l", col = "brown",
+     ylab = "Probability density", xlab = "Height")
+```
+We can ask three sorts of questions:
+    1. shorter than particular height?
+    2. taller than particular height?
+    3. between one specified height and another?
+
+Convert height into a value of z, i.e. convert height into a number of standard deviations from the mean.
+
+Question:  what is the probability that one person selected at random will be less than 160 cm tall?
+
+```{r}
+z <- (160 - 170) / 8
+
+pnorm(z)
+```
+What is probabilty that person is taller than 185 cm?
+```{r}
+z2 <- (185 - 170) / 8
+
+1 - pnorm(z2)
+```
+
+What is probability that person is between 165 cm and 180 cm?
+```{r}
+z_1 <- (165 - 170) / 8
+z_2 <- (180 - 170) / 8
+
+pnorm(z_2) - pnorm(z_1)
+```
+
+Plots for testing normality of samples
+```{r}
+data <- read.csv("skewdata.csv")
+
+qqnorm(data$values)
+qqline(data$values, lty = 2)
+```
+
+Data with outliers
+```{r}
+light <- read.csv("light.csv")
+
+hist(light$speed)
+summary(light$speed)
+```
+Outlier rule of thumb: value 1.5 times the interquartile range
+```{r}
+850 - ((980 - 850) * 1.5)
+980 + ((980 - 850) * 1.5)
+```
+
+Inference in one-sample case
+```{r}
+wilcox.test(x = light$speed, mu = 990)
+```
+
+Bootstrap in hypothesis testing with single samples
+Question: how likely is it that the population mean we are trying to estimate with our random sample of 100 values is as big as 990?
+
+  1. Take 10,000 random samples with replacement using n = 100 from 100 values of ligth and calculate 10,000 values of the mean.
+  2. What is probability of obtaining a mean as large as 990?
+```{r}
+a <- numeric(10000)
+for (i in 1:10000) a[i] <- mean(sample(x = light$speed, replace = TRUE))
+hist(a)
+
+max(a)
+mean(a)
+sd(a)
+
+```
+
+Skew
+
+```{r}
+skew <- function(x) {
+  m3 <- sum((x - mean(x))^3)/ length(x)
+  s3 <- sqrt(var(x))^3
+  m3/s3
+}
+
+hist(data$values, main = "", col = "green")
+
+skew(data$values)
+
+t_test <- skew(data$values)/sqrt(6/length(data$values))
+
+1 - pt(t_test, length(data$values) - 2)
+
+skew(sqrt(data$values))/sqrt(6/length(data$values))
+skew(log(data$values))/sqrt(6/length(data$values))
+
+```
+
+Kurtosis
+```{r}
+kurtosis <- function(x){
+  m4 <- sum((x - mean(x))^4)/length(x)
+  s4 <- var(x)^2
+  m4/s4 - 3
+}
+
+kurtosis(data$values)
+
+kurtosis(data$values)/sqrt(24/length(data$values))
+```
+
