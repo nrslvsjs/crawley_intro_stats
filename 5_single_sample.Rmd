@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Single Samples
 
-Questions:  1. what is mean value? 
+Questions:  1. what is mean value?
             2. is mean value significantly different from current expectation or theory?
             3. what is the level of uncertainty associated with our estimate of the mean values?
             
